@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
-import NewsItem from "./NewsItem"
+import NewsItem from "./NewsItem";
+import Spinner from "./Spinner";
 import { useState } from 'react';
 export default function News() {
   let page = 1
-  let results_per_page = 20
+  let results_per_page = 6
   let number_of_pages = 1
+  let default_loading = false
   let articles = [
     {
     "source": {
@@ -61,65 +63,61 @@ export default function News() {
   let [state , newstate] = useState(articles)
   let [currentpage , setPage]  = useState(page)
   let [current_number_of_pages , setNumberOfPages] = useState(number_of_pages)
+  let [loading , setloading] = useState(default_loading)
   useEffect(()=>{
-    let newsapi  = `https://newsapi.org/v2/top-headlines?country=in&apiKey=4374252f793d45d2af70c57ab61f5024&page=1&pageSize=${results_per_page}`;
+    let newsapi  = `https://newsapi.org/v2/top-headlines?country=in&apiKey=4374252f793d45d2af70c57ab61f5024&page=${currentpage}&pageSize=${results_per_page}`;
     (async ()=>{
+      setloading(true)
       let data = await fetch(newsapi)
       let parsedata =await  data.json()
       let {articles} = parsedata
+      setloading(false)
       newstate(articles)
       setNumberOfPages(Math.ceil(parsedata.totalResults/results_per_page))
-      console.log(parsedata)
     })();
-  },[results_per_page]);
+  },[results_per_page,currentpage]);
 
   const handlePreviousClick = async() =>{
     console.log("previious")
     currentpage = currentpage -1
-    console.log(currentpage)
+    setloading(true)
     setPage(currentpage)
     let newsapi  = `https://newsapi.org/v2/top-headlines?country=in&apiKey=4374252f793d45d2af70c57ab61f5024&page=${currentpage}&pageSize=${results_per_page}`;
     let data = await fetch(newsapi)
     let parsedata =await  data.json()
     let {articles} = parsedata
+    setloading(false)
     newstate(articles)
     
   }
   const handleNextClick = async() =>{
-    console.log("Next")
-    if(currentpage  < current_number_of_pages){
+       console.log("Next")
       currentpage = currentpage +1
-      console.log(currentpage)
+      setloading(true)
       setPage(currentpage)
-      let newsapi  = `https://newsapi.org/v2/top-headlines?country=in&apiKey=4374252f793d45d2af70c57ab61f5024&page=${currentpage}`;
+      let newsapi  = `https://newsapi.org/v2/top-headlines?country=in&apiKey=4374252f793d45d2af70c57ab61f5024&page=${currentpage}&pageSize=${results_per_page}`;
       let data = await fetch(newsapi)
       let parsedata =await  data.json()
       let {articles} = parsedata
+      setloading(false)
       newstate(articles)
-    }
-    else{
-    let newsapi  = `https://newsapi.org/v2/top-headlines?country=in&apiKey=4374252f793d45d2af70c57ab61f5024&page=${currentpage}`;
-    let data = await fetch(newsapi)
-    let parsedata =await  data.json()
-    let {articles} = parsedata
-    newstate(articles)
-    }
-    
-  }
+    }    
+  
   return (
     <div className='container my-3'>
-      <h2>New Today - Top HeadLines</h2>
+      <h2 className='text-center'>News Keeda - Top News Feeds And Headlines</h2>
+      <div className='container d-flex justify-content-between'>
+      <button type='button' disabled={currentpage<=1} className='btn btn-dark' onClick={handlePreviousClick}>&larr; Previous</button>
+      <button type='button' disabled={currentpage >= current_number_of_pages} className='btn btn-dark' onClick={handleNextClick}>Next &rarr;</button>
+      </div>
+      {loading && <Spinner/>}
       <div className='row'>
-      {state.map((ele)=>{
+      {!loading && state.map((ele)=>{
       let {title , description , url , urlToImage} = ele
       return <div className='col-md-4' key={url}>
         <NewsItem title = {title ? title.slice(0,53) : ""} description = {description ? description.slice(0,73) : ""} imgurl = {urlToImage} url = {url}/>
       </div>
      })}
-    </div>
-    <div className='container d-flex justify-content-between'>
-    <button type='button' disabled={currentpage<=1} className='btn btn-dark' onClick={handlePreviousClick}>&larr; Previous</button>
-    <button type='button' className='btn btn-dark' onClick={handleNextClick}>Next &rarr;</button>
     </div>
     </div>
   );
